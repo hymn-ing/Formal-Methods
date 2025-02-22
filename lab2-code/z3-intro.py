@@ -52,13 +52,26 @@ pretty_print(F)
 # exercises 1 : P -> (Q -> P)
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-# raise NotImplementedError('TODO: Your code here!')
+P, Q = Bools('P Q')
+F = Implies(Q, P)
+G = Implies(P, F)
+pretty_print(G)
+solver = Solver()
+solver.add(Not(G))
+assert solver.check() == unsat
+# raise NotImplementedError()
 
 
 # exercise 2 : (P -> Q) -> ((Q -> R) -> (P -> R))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-# raise NotImplementedError('TODO: Your code here!')
+p, q, r = Bools('p q r')
+f = Implies(Implies(p, q), Implies(Implies(q, r), Implies(p, r)))
+solver = Solver()
+pretty_print(f)
+solver.add(Not(f))
+assert solver.check() == unsat
+# # raise NotImplementedError('TODO: Your code here!')
 
 # exercise 3 : (P /\ (Q /\ R)) -> ((P /\ Q) /\ R)
 # Please use z3 to define the proposition.
@@ -160,38 +173,64 @@ assert solver.check() == unsat
 # exercise 9 : ∀x.(P(x) /\ Q(x)) <-> (∀x.P(x) /\ ∀x.Q(x))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
+# raise NotImplementedError('TODO: Your code here!')
+p, q = Function('p', isort, bsort), Function('q', isort, bsort)
+f = (ForAll(x, And(p(x), q(x))) == And(ForAll(x, p(x)), ForAll(x, q(x))))
+pretty_print(f)
+solver = Solver()
+solver.add(Not(f))
+assert solver.check() == unsat
 
 # exercise 10 : ∃x.(¬P(x) \/ Q(x)) -> ∃x.(¬(P(x) /\ ¬Q(x)))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
+# raise NotImplementedError('TODO: Your code here!')
+f10 = Implies(Exists(x, Or(Not(p(x)), q(x))),
+              Exists(x, Not(And(p(x), Not(q(x))))))
+pretty_print(f10)
+solver = Solver()
+solver.add(Not(f10))
+assert solver.check() == unsat
 
 # exercise 11 : ∃x.(P(x) \/ Q(x)) <-> (∃x.P(x) \/ ∃x.Q(x))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
+# raise NotImplementedError('TODO: Your code here!')
 
 # exercise 12 : ∀x.(P(x) -> ¬Q(x)) -> ¬(∃x.(P(x) /\ Q(x)))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
+# raise NotImplementedError('TODO: Your code here!')
 
 # exercise 13 : ∃x.(P(x) /\ Q(x)) /\ ∀x.(P(x) -> R(x)) -> ∃x.(R(x) /\ Q(x))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
+# raise NotImplementedError('TODO: Your code here!')
 
 # exercise 14 : ∃x.∃y.P(x, y) -> ∃y.∃x.P(x, y)
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
-
+# raise NotImplementedError('TODO: Your code here!')
+y = Int('y')
+p=Function('p',isort,isort,bsort)
+f14 = Implies(Exists([x, y], p([x, y])), Exists([y, x], p([x, y])))
+pretty_print(f14)
+solver = Solver()
+solver.add(Not(f14))
+assert solver.check() == unsat
 # exercise 15 : P(b) /\ (∀x.∀y.(P(x) /\ P(y) -> x = y)) -> (∀x.(P(x) <-> x = b))
 # Please use z3 to define the proposition.
 # Note that you need to define the proposition, and prove it.
-raise NotImplementedError('TODO: Your code here!')
-
+# raise NotImplementedError('TODO: Your code here!')
+p=Function('p',isort,bsort)
+b=Int('b')
+f15l=And(p(b),ForAll([x,y],Implies(And(p(x),p(y)),(x==y))))
+f15r=ForAll(x,(p(x)==(x==b)))
+f15=Implies(f15l,f15r)
+pretty_print(f15)
+solver = Solver()
+solver.add(Not(f15))
+assert solver.check() == unsat
 
 ################################################################
 ##                           Part C                           ##
@@ -211,5 +250,17 @@ raise NotImplementedError('TODO: Your code here!')
 # declare sorts: isort and bsort
 isort = IntSort()
 bsort = BoolSort()
+solver=Solver()
+isodd=Function('f',isort,bsort)
+p=isodd(1)
+q=ForAll(x,Implies(isodd(x),isodd(x+2)))
+pretty_print(p)
+pretty_print(q)
+solver.add(p)
+solver.add(q)
+solver.add(isodd(9))
+solver.add(isodd(25))
+solver.add(isodd(99))
+assert solver.check()==sat
 
-raise NotImplementedError('TODO: Your code here!')
+# raise NotImplementedError('TODO: Your code here!')
