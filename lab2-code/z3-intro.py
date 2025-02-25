@@ -264,7 +264,6 @@ solver.add(isodd(25))
 solver.add(isodd(99))
 assert solver.check()==sat
 print('.............')
-prove(isodd(3))
 solve(q)
 
 # raise NotImplementedError('TODO: Your code here!')
