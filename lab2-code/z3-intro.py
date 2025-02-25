@@ -56,6 +56,7 @@ P, Q = Bools('P Q')
 F = Implies(Q, P)
 G = Implies(P, F)
 pretty_print(G)
+prove(G)
 solver = Solver()
 solver.add(Not(G))
 assert solver.check() == unsat
@@ -262,5 +263,8 @@ solver.add(isodd(9))
 solver.add(isodd(25))
 solver.add(isodd(99))
 assert solver.check()==sat
+print('.............')
+prove(isodd(3))
+solve(q)
 
 # raise NotImplementedError('TODO: Your code here!')
