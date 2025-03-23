@@ -20,11 +20,11 @@ P ::= p
     | ~P
 '''
 
+
 @dataclass
 class Prop:
     def __repr__(self):
         return self.__str__()
-
 
 
 @dataclass(repr=False)
@@ -100,14 +100,14 @@ def to_z3(prop: Prop) -> z3.BoolRef:
         case PFalse():
             return False
         # raise NotImplementedError('TODO: Your code here!')
-        case PAnd():
-            return And(PAnd.left, PAnd.right)
-        case POr():
-            return Or(POr.left, POr.right)
+        case PAnd(left, right):
+            return And(to_z3(left), to_z3(right))
+        case POr(left, right):
+            return Or(to_z3(left), to_z3(right))
         case PImplies(left, right):
-            return Implies(left, right)
+            return Implies(to_z3(left), to_z3(right))
         case PNot(var):
-            return Not(var)
+            return Not(to_z3(var))
 
 
 #####################
@@ -124,8 +124,15 @@ def ie(prop: Prop) -> Prop:
     # raise NotImplementedError('TODO: Your code here!')
     match prop:
         case PImplies(left, right):
-            return Or(Not(left), right)
-    return prop
+            return POr(PNot(ie(left)), ie(right))
+        case POr(left, right):
+            return POr(ie(left), ie(right))
+        case PAnd(left, right):
+            return PAnd(ie(left), ie(right))
+        case PNot(p):
+            return PNot(ie(p))
+        case PVar(p):
+            return prop
 
 
 # Exercise 3-3: try to implement the `nnf()` method to convert the
@@ -146,6 +153,25 @@ def nnf(prop_without_implies: Prop) -> Prop:
         case POr(left, right):
             return POr(nnf(left), nnf(right))
         # raise NotImplementedError('TODO: Your code here!')
+        case PVar(prop):
+            return prop_without_implies
+        # case PImplies):
+        #     return (POr(nnf(PNot(prop.left)), (nnf(prop.right))))
+        case PAnd(left, right):
+            return (PAnd(nnf(left), nnf(right)))
+        # case POr(left,right):
+        #     return (POr(nnf(left), nnf(right)))
+        case PNot(prop):
+            # return PNot(nnf(prop))
+            match prop:
+                case PNot(p):
+                    return nnf(p)
+                case PVar(prop):
+                    return PNot(prop)
+                case PAnd(left, right):
+                    return (POr(nnf(PNot(prop.left)), nnf(PNot(prop.right))))
+                case POr(left, right):
+                    return (PAnd(nnf(PNot(prop.left)), nnf(PNot(prop.right))))
 
 
 # Exercise 3-4: try to implement the `cnf()` method to convert the
@@ -161,7 +187,14 @@ def nnf(prop_without_implies: Prop) -> Prop:
 #   D(P, Q)        = P \/ Q
 def cnf(nnf_prop: Prop) -> Prop:
     def cnf_d(left: Prop, right: Prop) -> Prop:
-        raise NotImplementedError('TODO: Your code here!')
+        # raise NotImplementedError('TODO: Your code here!')
+        match left:
+            case PAnd(p1, p2):
+                return PAnd(cnf_d(p1, right), cnf_d(p2, right))
+        match right:
+            case PAnd(q1, q2):
+                return PAnd(cnf_d(left, q1), cnf_d(left, q2))
+        return POr(left, right)
 
     match nnf_prop:
         case PAnd(left, right):
@@ -170,6 +203,7 @@ def cnf(nnf_prop: Prop) -> Prop:
             return cnf_d(cnf(left), cnf(right))
         case _:
             return nnf_prop
+
 
 def flatten(cnf_prop: Prop) -> List[List[Prop]]:
     """Flatten CNF Propositions to nested list structure .
@@ -204,7 +238,7 @@ def flatten(cnf_prop: Prop) -> List[List[Prop]]:
             return flatten(left) + flatten(right)
         case POr():
             return [get_atom_from_disjunction(cnf_prop)]
-        case _ :
+        case _:
             return [[cnf_prop]]
 
 
@@ -242,39 +276,39 @@ class TestDpll(unittest.TestCase):
     def test_to_z3_1(self):
         self.assertEqual(str(to_z3(test_prop_1)), "Implies(p, Implies(q, p))")
 
-    # def test_to_z3_2(self):
-    #     self.assertEqual(str(to_z3(test_prop_2)),
-    #                      "Not(And(Or(p1, Not(p2)), Or(p3, Not(p4))))")
+    def test_to_z3_2(self):
+        self.assertEqual(str(to_z3(test_prop_2)),
+                         "Not(And(Or(p1, Not(p2)), Or(p3, Not(p4))))")
 
-    # def test_ie_1(self):
-    #     self.assertEqual(str(ie(test_prop_1)), "(~p \\/ (~q \\/ p))")
+    def test_ie_1(self):
+        self.assertEqual(str(ie(test_prop_1)), "(~p \\/ (~q \\/ p))")
 
-    # def test_ie_2(self):
-    #     self.assertEqual(str(ie(test_prop_2)),
-    #                      "~((p1 \\/ ~p2) /\\ (p3 \\/ ~p4))")
+    def test_ie_2(self):
+        self.assertEqual(str(ie(test_prop_2)),
+                         "~((p1 \\/ ~p2) /\\ (p3 \\/ ~p4))")
 
-    # def test_nnf_1(self):
-    #     self.assertEqual(str(nnf(ie(test_prop_1))), "(~p \\/ (~q \\/ p))")
+    def test_nnf_1(self):
+        self.assertEqual(str(nnf(ie(test_prop_1))), "(~p \\/ (~q \\/ p))")
 
-    # def test_nnf_2(self):
-    #     self.assertEqual(str(nnf(ie(test_prop_2))),
-    #                      "((~p1 /\\ p2) \\/ (~p3 /\\ p4))")
+    def test_nnf_2(self):
+        self.assertEqual(str(nnf(ie(test_prop_2))),
+                         "((~p1 /\\ p2) \\/ (~p3 /\\ p4))")
 
-    # def test_cnf_1(self):
-    #     self.assertEqual(str(cnf(nnf(ie(test_prop_1)))), "(~p \\/ (~q \\/ p))")
+    def test_cnf_1(self):
+        self.assertEqual(str(cnf(nnf(ie(test_prop_1)))), "(~p \\/ (~q \\/ p))")
 
-    # def test_cnf_2(self):
-    #     self.assertEqual(str(cnf(nnf(ie(test_prop_2)))),
-    #                      "(((~p1 \\/ ~p3) /\\ (~p1 \\/ p4)) /\\ ((p2 \\/ ~p3) /\\ (p2 \\/ p4)))")
+    def test_cnf_2(self):
+        self.assertEqual(str(cnf(nnf(ie(test_prop_2)))),
+                         "(((~p1 \\/ ~p3) /\\ (~p1 \\/ p4)) /\\ ((p2 \\/ ~p3) /\\ (p2 \\/ p4)))")
 
-    # def test_cnf_flatten_1(self):
-    #     test_1_flatten = flatten(cnf(nnf(ie(test_prop_1))))
-    #     self.assertEqual(str(test_1_flatten), "[[~p, ~q, p]]")
+    def test_cnf_flatten_1(self):
+        test_1_flatten = flatten(cnf(nnf(ie(test_prop_1))))
+        self.assertEqual(str(test_1_flatten), "[[~p, ~q, p]]")
 
-    # def test_cnf_flatten_2(self):
-    #     test_2_flatten = flatten(cnf(nnf(ie(test_prop_2))))
-    #     self.assertEqual(str(test_2_flatten),
-    #                      "[[~p1, ~p3], [~p1, p4], [p2, ~p3], [p2, p4]]")
+    def test_cnf_flatten_2(self):
+        test_2_flatten = flatten(cnf(nnf(ie(test_prop_2))))
+        self.assertEqual(str(test_2_flatten),
+                         "[[~p1, ~p3], [~p1, p4], [p2, ~p3], [p2, p4]]")
 
     # def test_dpll_1(self):
     #     s = Solver()
