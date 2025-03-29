@@ -8,6 +8,7 @@ Hints:
  if you think necessary."""
 
 from z3 import *
+from z3_solver import sat_all
 
 # Exercise 4: Circuit Layout
 # Usually When EE-Engineers design a circuit layout, they will verify it to
@@ -21,7 +22,12 @@ from z3 import *
 # First we convert it into proposition
 def circuit_layout():
     a, b, c, d = Bools('a b c d')
-    raise NotImplementedError('TODO: Your code here!') 
+    # raise NotImplementedError('TODO: Your code here!') 
+    F=Or(And(d,And(a,b)),And(Not(c),And(a,b)))
+    # z3.solve(F)
+    # z3.solve(Not(F))
+    sat_all([a,b,c,d],F)
+    sat_all([a,b,c,d],Not(F))
 
 
 if __name__ == '__main__':
